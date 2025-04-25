@@ -1,10 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 body {
   @apply bg-black text-gray-100; /* Change background to black */
-  font-family: 'Inter', sans-serif;
+  font-family: 'Noto Sans', sans-serif;
   margin: 0;
   display: flex;
 }

@@ -40,41 +40,7 @@ function App() {
     }
   }, [settings]);
 
-  // Add Escape key listener to stop game (set isPlaying to false)
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && isPlaying) {
-        // Directly set isPlaying to false, like Cancel button
-        setIsPlaying(false);
-        // We don't need to call handleReturnToSettings if it only sets view/isPlaying
-        // Ensure the view is 'settings' if Escape is pressed
-        if (view === 'scoreboard') {
-            setView('settings');
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-
-    // Cleanup function to remove the event listener
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-    // Depends on isPlaying to add/remove listener appropriately
-    // and view to ensure settings view is activated if escaping from scoreboard (edge case)
-  }, [isPlaying, view]);
-
-  const handleSettingsChange = useCallback((newSettings: GameSettings) => {
-    // Only update settings if the game is not currently playing
-    // to prevent mid-game changes potentially causing issues.
-    // If changes should be allowed mid-game, this check can be removed,
-    // but the Game component would need to handle settings updates robustly.
-    if (!isPlaying) {
-        setSettings(newSettings);
-    }
-  }, [isPlaying]);
-
-  // Called by Settings 'Start Game' button
+  // Called by Settings 'Start Game' button and spacebar key
   const handleStartGame = useCallback((gameSettings: GameSettings) => {
     // Apply potentially changed settings before starting
     setSettings(gameSettings);
@@ -99,6 +65,55 @@ function App() {
     setView('settings'); // Ensure view is the main game/settings layout
   }, []);
 
+  // Add keyboard event listeners for game control (Escape to stop, Spacebar to start)
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Check if the active element is an input or textarea (to avoid triggering when typing)
+      const isTypingInField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName || '');
+      
+      // Escape key - stop game
+      if (event.key === 'Escape' && isPlaying) {
+        // Directly set isPlaying to false, like Cancel button
+        setIsPlaying(false);
+        // Ensure the view is 'settings' if Escape is pressed
+        if (view === 'scoreboard') {
+            setView('settings');
+        }
+      }
+      
+      // Spacebar - start game when not playing, in settings view, and no key conflicts
+      if (event.code === 'Space' && !isPlaying && view === 'settings' && !isTypingInField) {
+        // Only start if there's no key conflict
+        const hasKeyConflict = settings.visualMatchKey.toLowerCase() === settings.audioMatchKey.toLowerCase();
+        if (!hasKeyConflict) {
+          // Prevent page scrolling
+          event.preventDefault();
+          handleStartGame(settings);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    // Cleanup function to remove the event listener
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+    // Depends on settings, isPlaying, and view to update the listener accordingly
+  }, [isPlaying, view, settings, handleStartGame]);
+
+  const handleSettingsChange = useCallback((newSettings: GameSettings) => {
+    // Only update settings if the game is not currently playing
+    // to prevent mid-game changes potentially causing issues.
+    // If changes should be allowed mid-game, this check can be removed,
+    // but the Game component would need to handle settings updates robustly.
+    if (!isPlaying) {
+        setSettings(newSettings);
+    }
+  }, [isPlaying]);
+
+
+
   // Toggle settings panel visibility
   const toggleSettingsCollapse = useCallback(() => {
     setIsSettingsCollapsed(prev => !prev);
@@ -107,7 +122,7 @@ function App() {
   return (
     // Use items-start for the grid layout
     <div className="px-4 flex flex-col justify-start items-center min-h-screen pt-8">
-      <h1 className="text-3xl font-bold mb-12 text-center">Dual N-Back Training</h1>
+      <h1 className="text-3xl font-bold mb-12 text-center">N-Back Training</h1>
 
       {view === 'scoreboard' && lastResults ? (
         // Render Scoreboard view

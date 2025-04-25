@@ -24,6 +24,11 @@ export function generateSequence(settings: GameSettings): Stimulus[] {
     // Log calculated number of trials
     console.log(`[generateSequence] Calculated numTrials: ${numTrials}`);
 
+    // Calculate minimum required matches (3 matches per 30 seconds)
+    const minVisualMatches = gameMode !== GameMode.Audio ? Math.ceil(sessionDuration / 30 * 3) : 0;
+    const minAudioMatches = gameMode !== GameMode.Visual ? Math.ceil(sessionDuration / 30 * 3) : 0;
+    console.log(`[generateSequence] Minimum required matches - Visual: ${minVisualMatches}, Audio: ${minAudioMatches}`);
+
     const sequence: Stimulus[] = [];
 
     // Helper to get a random element or null based on mode
@@ -31,15 +36,37 @@ export function generateSequence(settings: GameSettings): Stimulus[] {
     const getRandomAudio = () => (gameMode === GameMode.Visual) ? null : AUDIO_LETTERS[Math.floor(Math.random() * AUDIO_LETTERS.length)];
 
     // Target probability for a match to occur on any given trial (for each modality)
-    const targetMatchProbability = 0.25; // Adjust as needed for desired difficulty
+    const targetMatchProbability = 0.25; // Base probability
 
+    // Track matches created
+    let visualMatchesCreated = 0;
+    let audioMatchesCreated = 0;
+    
+    // Create initial sequence with random distribution of matches
     for (let i = 0; i < numTrials; i++) {
         let visualPosition: number | null = null;
         let audioLetter: string | null = null;
+        let forceVisualMatch = false;
+        let forceAudioMatch = false;
+        
+        // As we get closer to the end, force matches if we haven't met minimum
+        const remainingTrials = numTrials - i;
+        const minRemainingVisual = Math.max(0, minVisualMatches - visualMatchesCreated);
+        const minRemainingAudio = Math.max(0, minAudioMatches - audioMatchesCreated);
+        
+        // Force matches if we're running out of trials to meet the minimum
+        if (i >= nLevel && remainingTrials <= minRemainingVisual * 2 && minRemainingVisual > 0 && gameMode !== GameMode.Audio) {
+            forceVisualMatch = true;
+        }
+        
+        if (i >= nLevel && remainingTrials <= minRemainingAudio * 2 && minRemainingAudio > 0 && gameMode !== GameMode.Visual) {
+            forceAudioMatch = true;
+        }
 
         // Decide if the current trial SHOULD be a match for visual
-        if (i >= nLevel && gameMode !== GameMode.Audio && Math.random() < targetMatchProbability) {
+        if (i >= nLevel && gameMode !== GameMode.Audio && (forceVisualMatch || Math.random() < targetMatchProbability)) {
             visualPosition = sequence[i - nLevel].visualPosition;
+            visualMatchesCreated++;
         } else {
             // Ensure the non-match isn't accidentally the same as N-back
             do {
@@ -48,8 +75,9 @@ export function generateSequence(settings: GameSettings): Stimulus[] {
         }
 
         // Decide if the current trial SHOULD be a match for audio
-        if (i >= nLevel && gameMode !== GameMode.Visual && Math.random() < targetMatchProbability) {
+        if (i >= nLevel && gameMode !== GameMode.Visual && (forceAudioMatch || Math.random() < targetMatchProbability)) {
             audioLetter = sequence[i - nLevel].audioLetter;
+            audioMatchesCreated++;
         } else {
             // Ensure the non-match isn't accidentally the same as N-back
             do {
@@ -60,9 +88,9 @@ export function generateSequence(settings: GameSettings): Stimulus[] {
         sequence.push({ visualPosition, audioLetter });
     }
 
-    // Log final sequence length
+    // Log final sequence length and number of matches created
     console.log(`[generateSequence] Generated sequence with length: ${sequence.length}`);
-    // console.log("Generated Sequence:", sequence); // For debugging
+    console.log(`[generateSequence] Matches created - Visual: ${visualMatchesCreated}, Audio: ${audioMatchesCreated}`);
     return sequence;
 }
 

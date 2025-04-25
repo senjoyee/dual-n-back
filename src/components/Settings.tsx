@@ -65,10 +65,10 @@ const Settings: React.FC<SettingsProps> = ({
         <h2 className="text-2xl font-semibold flex items-center">
           <span className="mr-2">⚙️</span> Game Settings
         </h2>
-        {/* Improved Toggle Button */}
+        {/* Improved Toggle Button with added spacing */}
         <button 
           onClick={onToggleCollapse}
-          className="flex items-center justify-center p-1.5 rounded-full hover:bg-blue-600 bg-blue-500 text-white transition-all"
+          className="flex items-center justify-center p-1.5 rounded-full hover:bg-blue-600 bg-blue-500 text-white transition-all ml-4"
           aria-label={isCollapsed ? 'Expand Settings' : 'Collapse Settings'}
           aria-expanded={!isCollapsed ? 'true' : 'false'} // Accessibility attribute
         >
