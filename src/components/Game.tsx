@@ -301,11 +301,24 @@ const Game: React.FC<GameProps> = ({ settings, onGameEnd, onResetGame, isActive 
     };
   }, [state.status, handleKeyDown]);
 
-  // Render null if sequence is not ready yet or settings aren't loaded in state
-  // Ensure state.settings exists before accessing it
+  // Even when sequence is not ready or settings aren't fully loaded, show the game panel
+  // We'll just render the empty game grid with controls instead of a loading message
   if (!state.settings || (state.status === 'settings' || state.stimulusSequence.length === 0 && state.status !== 'finished')) {
-      // Could show a loading indicator here
-      return <div className="text-center p-8">Loading game...</div>;
+      return (
+        <div className="flex flex-col items-center justify-center p-6 bg-gray-950 text-white rounded-lg shadow-xl w-full">
+          <GameGrid activePosition={null} />
+          <ResponseButtons 
+            gameMode={gameMode}
+            feedback={{visual: null, audio: null}} 
+            visualMatchKey={settings.visualMatchKey}
+            audioMatchKey={settings.audioMatchKey}
+          />
+          <Controls 
+            status="idle"
+            onExit={onResetGame}
+          />
+        </div>
+      );
   }
 
   // Show Results screen if status is 'finished'
